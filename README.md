@@ -1,0 +1,2 @@
+# minijuegoss
+Beta del juego
