@@ -1,0 +1,250 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Room Simulator - Multiplayer</title>
+  <style>
+    :root {
+      --primary: #0052cc;
+      --secondary: #0065ff;
+      --background: #0f1218;
+      --text: #ffffff;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--background);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--background);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .loading-bar-container {
+      width: 300px;
+      height: 10px;
+      background: #2d3544;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .loading-bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+      transition: width 5s linear;
+      border-radius: 5px;
+    }
+
+    h1 {
+      font-size: 2.5em;
+      text-align: center;
+      margin-bottom: 50px;
+      background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .mode-selection {
+      text-align: center;
+      margin-bottom: 40px;
+      min-height: calc(100vh - 40px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .mode-card {
+      background: #1a1f2b;
+      border-radius: 12px;
+      padding: 30px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid #2d3544;
+      margin-bottom: 20px;
+    }
+
+    .mode-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--primary);
+    }
+
+    .game-container {
+      background: #1a1f2b;
+      padding: 25px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.3s;
+      font-weight: 500;
+      width: 100%;
+    }
+
+    .btn:hover {
+      background: var(--secondary);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      background: #2d3544;
+      border: 1px solid #404b61;
+      border-radius: 6px;
+      color: white;
+      margin-top: 5px;
+    }
+
+    .game-selection {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .minigame-card {
+      background: #4ecdc4;
+      padding: 20px;
+      text-align: center;
+      border-radius: 8px;
+      cursor: pointer;
+      flex: 1;
+      margin: 0 10px;
+      transition: transform 0.3s ease;
+    }
+
+    .minigame-card:hover {
+      transform: scale(1.1);
+    }
+  </style>
+</head>
+<body>
+
+<div class="loading-screen" id="loadingScreen">
+  <svg width="200" height="200" viewBox="0 0 200 200">
+    <circle cx="100" cy="100" r="80" fill="#2d3544"/>
+    <circle cx="100" cy="100" r="60" fill="#4ecdc4"/>
+    <circle cx="70" cy="80" r="8" fill="#ff6b6b">
+      <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="130" cy="80" r="8" fill="#ff6b6b">
+      <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite"/>
+    </circle>
+  </svg>
+  <div class="loading-bar-container">
+    <div class="loading-bar" id="loadingBar"></div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="mode-selection">
+    <h1>🎮 Game Party Central 🎲</h1>
+    <div class="mode-cards">
+      <div class="mode-card" onclick="showSinglePlayer()">
+        <h3>Single Player</h3>
+        <p>Solo adventures await!</p>
+      </div>
+      <div class="mode-card" onclick="showMultiPlayer()">
+        <h3>Multiplayer</h3>
+        <p>Join the party!</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="game-container hidden" id="gameContainer">
+    <h2>Game In Progress</h2>
+    <div class="game-selection">
+      <div class="minigame-card" onclick="startRedLightGame()">
+        <h3>Red Light Reflex</h3>
+      </div>
+      <div class="minigame-card" onclick="startCityQuiz()">
+        <h3>City Quiz</h3>
+      </div>
+    </div>
+  </div>
+  
+  <div class="game-container hidden" id="singlePlayerGame">
+    <h2>Single Player Game</h2>
+    <button class="btn" onclick="startGame()">Start Game</button>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const loadingScreen = document.getElementById('loadingScreen');
+    const loadingBar = document.getElementById('loadingBar');
+    const mainContent = document.querySelector('.container');
+    
+    // Hide main content initially
+    mainContent.style.display = 'none';
+    
+    // Start loading animation
+    setTimeout(() => {
+      loadingBar.style.width = '100%';
+    }, 100);
+    
+    // After 5 seconds, hide loading screen and show main content
+    setTimeout(() => {
+      loadingScreen.style.opacity = '0';
+      loadingScreen.style.transition = 'opacity 0.5s';
+      mainContent.style.display = 'block';
+      
+      setTimeout(() => {
+        loadingScreen.style.display = 'none';
+      }, 500);
+    }, 5000);
+  });
+
+  function showSinglePlayer() {
+    document.querySelector('.mode-selection').style.display = 'none';
+    document.getElementById('gameContainer').classList.add('hidden');
+    document.getElementById('singlePlayerGame').classList.remove('hidden');
+  }
+
+  function showMultiPlayer() {
+    alert("Multiplayer mode is coming soon!");
+  }
+
+  function startGame() {
+    alert("Game Started!");
+  }
+
+  function startRedLightGame() {
+    alert("Red Light Reflex Game Started!");
+  }
+
+  function startCityQuiz() {
+    alert("City Quiz Game Started!");
+  }
+</script>
+
+</body>
+</html>
